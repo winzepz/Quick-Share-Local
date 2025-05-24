@@ -664,11 +664,12 @@
     border: 1px solid var(--border-color);
     border-radius: 4px;
     padding: 10px;
-    min-width: 200px;
+    min-width: 250px;
     max-height: 300px;
     overflow-y: auto;
     display: none;
     z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
   
   .controls:hover .user-list {
@@ -680,6 +681,11 @@
     align-items: center;
     padding: 8px;
     border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.2s ease;
+  }
+  
+  .user-item:hover {
+    background-color: var(--message-bg);
   }
   
   .user-item:last-child {
@@ -691,16 +697,29 @@
     height: 30px;
     border-radius: 50%;
     margin-right: 10px;
+    border: 2px solid var(--accent-color);
   }
   
   .user-item .user-name {
     font-weight: bold;
     margin-right: 10px;
+    flex: 1;
   }
   
   .user-item .user-status {
     color: var(--text-secondary);
     font-size: 0.9em;
+    margin-right: 10px;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .user-item .connection-time {
+    color: var(--text-secondary);
+    font-size: 0.8em;
+    white-space: nowrap;
   }
   
   /* Message Header Styles */
@@ -708,6 +727,8 @@
     display: flex;
     align-items: center;
     margin-bottom: 5px;
+    flex-wrap: wrap;
+    gap: 8px;
   }
   
   .message-header .user-avatar {
@@ -715,6 +736,26 @@
     height: 24px;
     border-radius: 50%;
     margin-right: 8px;
+    border: 2px solid var(--accent-color);
+  }
+  
+  .message-header .user-status {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    font-style: italic;
+  }
+  
+  /* Connection Status Colors */
+  .connected {
+    background-color: #2ea043 !important;
+  }
+  
+  .reconnecting {
+    background-color: #f0a73a !important;
+  }
+  
+  .disconnected {
+    background-color: #f85149 !important;
   }
   
   /* Connection Status Styles */
@@ -722,9 +763,9 @@
     padding: 4px 8px;
     border-radius: 4px;
     font-size: 0.9em;
+    transition: background-color 0.3s ease;
   }
   
   #userCount:not(:empty) {
-    background: var(--accent-color);
     color: white;
   }

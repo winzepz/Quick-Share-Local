@@ -1,7 +1,10 @@
 const socket = io({
   reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000
+  reconnectionAttempts: Infinity,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  timeout: 20000,
+  autoConnect: true
 });
 
 // Theme Toggle
@@ -405,6 +408,122 @@ socket.on('message_read_status', (data) => {
   }
 });
 
+// Connection status handling
+let connectionStatus = {
+  connected: false,
+  reconnecting: false,
+  lastError: null
+};
+
+// Update connection status UI
+function updateConnectionStatus() {
+  const statusElement = document.getElementById('userCount');
+  if (connectionStatus.connected) {
+    statusElement.textContent = 'Connected';
+    statusElement.style.backgroundColor = '#2ea043';
+  } else if (connectionStatus.reconnecting) {
+    statusElement.textContent = 'Reconnecting...';
+    statusElement.style.backgroundColor = '#f0a73a';
+  } else {
+    statusElement.textContent = 'Disconnected';
+    statusElement.style.backgroundColor = '#f85149';
+  }
+}
+
+// Handle connection events
+socket.on('connect', () => {
+  connectionStatus.connected = true;
+  connectionStatus.reconnecting = false;
+  connectionStatus.lastError = null;
+  updateConnectionStatus();
+  showNotification('Connected to server');
+});
+
+socket.on('disconnect', () => {
+  connectionStatus.connected = false;
+  updateConnectionStatus();
+  showNotification('Disconnected from server');
+});
+
+socket.on('reconnect_attempt', () => {
+  connectionStatus.reconnecting = true;
+  updateConnectionStatus();
+  showNotification('Attempting to reconnect...');
+});
+
+socket.on('reconnect', () => {
+  connectionStatus.connected = true;
+  connectionStatus.reconnecting = false;
+  updateConnectionStatus();
+  showNotification('Reconnected to server');
+});
+
+socket.on('reconnect_error', (error) => {
+  connectionStatus.lastError = error;
+  showNotification('Reconnection failed: ' + error.message);
+});
+
+socket.on('connect_error', (error) => {
+  connectionStatus.lastError = error;
+  showNotification('Connection error: ' + error.message);
+});
+
+// Handle server errors
+socket.on('error', (error) => {
+  showNotification('Server error: ' + error);
+});
+
+// Handle server info
+socket.on('server_info', (info) => {
+  console.log('Server info:', info);
+  // Store server info for reconnection
+  localStorage.setItem('serverInfo', JSON.stringify(info));
+});
+
+// Handle user list updates
+socket.on('user_list', (users) => {
+  const userCount = document.getElementById('userCount');
+  if (connectionStatus.connected) {
+    userCount.textContent = `${users.length} online`;
+  }
+  
+  // Update user list in UI
+  const userList = document.createElement('div');
+  userList.className = 'user-list';
+  users.forEach(user => {
+    const userElement = document.createElement('div');
+    userElement.className = 'user-item';
+    userElement.innerHTML = `
+      <img src="${user.profile.avatar}" alt="${user.profile.name}" class="user-avatar">
+      <span class="user-name">${user.profile.name}</span>
+      <span class="user-status">${user.profile.status || ''}</span>
+      <span class="connection-time">${formatConnectionTime(user.connectedAt)}</span>
+    `;
+    userList.appendChild(userElement);
+  });
+  
+  // Replace existing user list if it exists
+  const existingList = document.querySelector('.user-list');
+  if (existingList) {
+    existingList.replaceWith(userList);
+  } else {
+    document.querySelector('.controls').appendChild(userList);
+  }
+});
+
+// Format connection time
+function formatConnectionTime(timestamp) {
+  if (!timestamp) return '';
+  const connectedAt = new Date(timestamp);
+  const now = new Date();
+  const diff = Math.floor((now - connectedAt) / 1000); // difference in seconds
+  
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
 function addMessage(user, data) {
   const messagesDiv = document.getElementById('messages');
   const msg = document.createElement('div');
@@ -414,7 +533,7 @@ function addMessage(user, data) {
   const isCode = /function|const|let|class|=>|<\w+>|if\s*\(|for\s*\(|while\s*\(/.test(data.text);
   const safeText = escapeHTML(data.text);
 
-  // User Label with Avatar
+  // User Label with Avatar and Status
   const userLabel = document.createElement('div');
   userLabel.className = 'message-header';
   
@@ -426,6 +545,13 @@ function addMessage(user, data) {
   const name = document.createElement('strong');
   name.innerText = data.user?.name || user;
   userLabel.appendChild(name);
+  
+  if (data.user?.status) {
+    const status = document.createElement('span');
+    status.className = 'user-status';
+    status.textContent = data.user.status;
+    userLabel.appendChild(status);
+  }
   
   msg.appendChild(userLabel);
 
@@ -541,47 +667,3 @@ function copyText(text, btn) {
     console.error('Copy failed:', err);
   });
 }
-
-// Connection status handling
-socket.on('connect', () => {
-  showNotification('Connected to server');
-  document.getElementById('userCount').textContent = 'Connected';
-});
-
-socket.on('disconnect', () => {
-  showNotification('Disconnected from server');
-  document.getElementById('userCount').textContent = 'Disconnected';
-});
-
-socket.on('connect_error', (error) => {
-  showNotification('Connection error: ' + error.message);
-  document.getElementById('userCount').textContent = 'Connection Error';
-});
-
-// Handle user list updates
-socket.on('user_list', (users) => {
-  const userCount = document.getElementById('userCount');
-  userCount.textContent = `${users.length} online`;
-  
-  // Update user list in UI if needed
-  const userList = document.createElement('div');
-  userList.className = 'user-list';
-  users.forEach(user => {
-    const userElement = document.createElement('div');
-    userElement.className = 'user-item';
-    userElement.innerHTML = `
-      <img src="${user.profile.avatar}" alt="${user.profile.name}" class="user-avatar">
-      <span class="user-name">${user.profile.name}</span>
-      <span class="user-status">${user.profile.status || ''}</span>
-    `;
-    userList.appendChild(userElement);
-  });
-  
-  // Replace existing user list if it exists
-  const existingList = document.querySelector('.user-list');
-  if (existingList) {
-    existingList.replaceWith(userList);
-  } else {
-    document.querySelector('.controls').appendChild(userList);
-  }
-});
