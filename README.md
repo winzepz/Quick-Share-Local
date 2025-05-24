@@ -124,3 +124,57 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 - [Express.js](https://expressjs.com/) for the server framework.
 
 ---
+
+# QuickShare Local
+
+A real-time file sharing and chat application that works over LAN and internet.
+
+## Features
+
+- Real-time messaging
+- File sharing
+- Voice messages
+- User profiles
+- Message encryption
+- Message pinning
+- Message threading
+- Read status
+- Dark/Light theme
+
+## Deployment on Render
+
+1. Fork this repository
+2. Create a new Web Service on Render
+3. Connect your GitHub repository
+4. Use the following settings:
+   - Build Command: `npm install`
+   - Start Command: `npm start`
+   - Environment Variables:
+     - `PORT`: 3001 (or your preferred port)
+
+## Local Development
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+4. Open http://localhost:3001 in your browser
+
+## Environment Variables
+
+- `PORT`: The port number the server will listen on (default: 3001)
+
+## Dependencies
+
+- Node.js >= 14.0.0
+- Express
+- Socket.IO
+
+## License
+
+MIT
