@@ -654,3 +654,77 @@
     color: var(--accent-color);
     margin-bottom: 10px;
   }
+  
+  /* User List Styles */
+  .user-list {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 10px;
+    min-width: 200px;
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+    z-index: 1000;
+  }
+  
+  .controls:hover .user-list {
+    display: block;
+  }
+  
+  .user-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .user-item:last-child {
+    border-bottom: none;
+  }
+  
+  .user-item .user-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+  
+  .user-item .user-name {
+    font-weight: bold;
+    margin-right: 10px;
+  }
+  
+  .user-item .user-status {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+  }
+  
+  /* Message Header Styles */
+  .message-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+  }
+  
+  .message-header .user-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+  
+  /* Connection Status Styles */
+  #userCount {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  
+  #userCount:not(:empty) {
+    background: var(--accent-color);
+    color: white;
+  }

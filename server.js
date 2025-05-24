@@ -6,7 +6,12 @@ const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+  cors: {
+    origin: "*",  // Allow connections from any origin
+    methods: ["GET", "POST"]
+  }
+});
 
 app.use(express.static('public'));
 
@@ -19,23 +24,36 @@ const pinnedMessages = [];
 // Store read status
 const messageReadStatus = new Map();
 
+// Store connected users
+const connectedUsers = new Map();
+
 io.on('connection', (socket) => {
-  console.log('A user connected');
+  console.log('A user connected from:', socket.handshake.address);
   
   // Handle user profile updates
   socket.on('update_profile', (profile) => {
     userProfiles.set(socket.id, profile);
+    connectedUsers.set(socket.id, {
+      id: socket.id,
+      profile: profile,
+      address: socket.handshake.address
+    });
+    
     io.emit('profile_updated', {
       userId: socket.id,
       profile: profile
     });
+    
+    // Broadcast updated user list
+    io.emit('user_list', Array.from(connectedUsers.values()));
   });
 
   // Handle typing indicator
   socket.on('typing', (isTyping) => {
     socket.broadcast.emit('typing', {
       userId: socket.id,
-      isTyping: isTyping
+      isTyping: isTyping,
+      user: userProfiles.get(socket.id)?.name || 'Anonymous'
     });
   });
 
@@ -45,6 +63,7 @@ io.on('connection', (socket) => {
       text: data.text,
       encrypted: data.encrypted,
       userId: socket.id,
+      user: userProfiles.get(socket.id)?.name || 'Anonymous',
       timestamp: new Date()
     });
   });
@@ -70,6 +89,7 @@ io.on('connection', (socket) => {
         voice: `/voices/${fileName}`,
         duration: data.duration,
         userId: socket.id,
+        user: userProfiles.get(socket.id)?.name || 'Anonymous',
         timestamp: new Date()
       });
     });
@@ -80,6 +100,7 @@ io.on('connection', (socket) => {
     io.emit('receive_file', {
       file: data.file,
       userId: socket.id,
+      user: userProfiles.get(socket.id)?.name || 'Anonymous',
       timestamp: new Date()
     });
   });
@@ -94,7 +115,8 @@ io.on('connection', (socket) => {
       });
       io.emit('message_pinned', {
         messageId: messageId,
-        userId: socket.id
+        userId: socket.id,
+        user: userProfiles.get(socket.id)?.name || 'Anonymous'
       });
     }
   });
@@ -112,15 +134,26 @@ io.on('connection', (socket) => {
     });
   });
 
+  // Send initial user list to new connection
+  socket.emit('user_list', Array.from(connectedUsers.values()));
+
   // Handle disconnection
   socket.on('disconnect', () => {
-    console.log('User disconnected');
+    console.log('User disconnected:', socket.handshake.address);
     userProfiles.delete(socket.id);
+    connectedUsers.delete(socket.id);
     io.emit('user_disconnected', socket.id);
+    io.emit('user_list', Array.from(connectedUsers.values()));
   });
 });
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+const HOST = '0.0.0.0';  // Listen on all network interfaces
+
+server.listen(PORT, HOST, () => {
+  console.log(`Server running at http://${HOST}:${PORT}`);
+  console.log('To connect from other devices:');
+  console.log('1. Find your computer\'s IP address');
+  console.log('2. Share the IP address with your friends');
+  console.log('3. They can connect using: http://YOUR_IP:3001');
 });

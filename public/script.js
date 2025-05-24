@@ -1,4 +1,8 @@
-const socket = io();
+const socket = io({
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000
+});
 
 // Theme Toggle
 const themeToggle = document.getElementById('themeToggle');
@@ -410,9 +414,19 @@ function addMessage(user, data) {
   const isCode = /function|const|let|class|=>|<\w+>|if\s*\(|for\s*\(|while\s*\(/.test(data.text);
   const safeText = escapeHTML(data.text);
 
-  // User Label
-  const userLabel = document.createElement('strong');
-  userLabel.innerText = user + ': ';
+  // User Label with Avatar
+  const userLabel = document.createElement('div');
+  userLabel.className = 'message-header';
+  
+  const avatar = document.createElement('img');
+  avatar.src = data.user?.profile?.avatar || 'https://via.placeholder.com/30';
+  avatar.className = 'user-avatar';
+  userLabel.appendChild(avatar);
+  
+  const name = document.createElement('strong');
+  name.innerText = data.user?.name || user;
+  userLabel.appendChild(name);
+  
   msg.appendChild(userLabel);
 
   // Timestamp
@@ -527,3 +541,47 @@ function copyText(text, btn) {
     console.error('Copy failed:', err);
   });
 }
+
+// Connection status handling
+socket.on('connect', () => {
+  showNotification('Connected to server');
+  document.getElementById('userCount').textContent = 'Connected';
+});
+
+socket.on('disconnect', () => {
+  showNotification('Disconnected from server');
+  document.getElementById('userCount').textContent = 'Disconnected';
+});
+
+socket.on('connect_error', (error) => {
+  showNotification('Connection error: ' + error.message);
+  document.getElementById('userCount').textContent = 'Connection Error';
+});
+
+// Handle user list updates
+socket.on('user_list', (users) => {
+  const userCount = document.getElementById('userCount');
+  userCount.textContent = `${users.length} online`;
+  
+  // Update user list in UI if needed
+  const userList = document.createElement('div');
+  userList.className = 'user-list';
+  users.forEach(user => {
+    const userElement = document.createElement('div');
+    userElement.className = 'user-item';
+    userElement.innerHTML = `
+      <img src="${user.profile.avatar}" alt="${user.profile.name}" class="user-avatar">
+      <span class="user-name">${user.profile.name}</span>
+      <span class="user-status">${user.profile.status || ''}</span>
+    `;
+    userList.appendChild(userElement);
+  });
+  
+  // Replace existing user list if it exists
+  const existingList = document.querySelector('.user-list');
+  if (existingList) {
+    existingList.replaceWith(userList);
+  } else {
+    document.querySelector('.controls').appendChild(userList);
+  }
+});
