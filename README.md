@@ -14,7 +14,7 @@ QuickDrop LAN is a lightweight, real-time text-sharing application designed for 
 ## Directory Structure
 
 ```
-QuickDrop-LAN/
+Quick-Share-Local/
 ├── public/
 │   ├── index.html  # Main HTML file
 │   ├── script.js   # Client-side JavaScript
@@ -33,8 +33,8 @@ QuickDrop-LAN/
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/winzepz/QuickDrop-LAN.git
-   cd QuickDrop-LAN
+   git clone https://github.com/winzepz/Quick-Share-Local.git
+   cd Quick-Share-Local
    ```
 
 2. **Install Dependencies**:
